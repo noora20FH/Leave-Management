@@ -51,4 +51,9 @@ class User extends Authenticatable
             'annual_leave_quota' => 'integer',
         ];
     }
+    public function leaveRequests()
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
+
 }
