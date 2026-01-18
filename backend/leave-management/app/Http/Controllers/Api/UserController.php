@@ -7,7 +7,9 @@ use App\Models\User;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail; // Import Facade Mail
+use App\Mail\EmployeeWelcomeMail;      // Import Mailable Class
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -28,31 +30,49 @@ class UserController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $users = User::orderBy('name', 'asc')->get();
+        // Gunakan withTrashed() agar user yang di-soft delete tetap muncul di daftar admin
+        $users = User::withTrashed()->orderBy('name', 'asc')->get();
         return UserResource::collection($users);
     }
 
     /**
-     * [ADMIN] Daftarkan karyawan baru (Invite Logic)
+     * [ADMIN] Daftarkan karyawan baru & Kirim Email
      */
     public function store(StoreUserRequest $request)
     {
-        // 1. Data sudah tervalidasi otomatis oleh StoreUserRequest
+        // 1. Logika Password: Ambil nama depan email + '1234'
+        // Contoh: noora20fairy@gmail.com -> noora20fairy
+        $emailPrefix = explode('@', $request->email)[0];
+        $plainPassword = $emailPrefix . '1234';
 
-        // 2. Buat User dengan status 'Pending Google Login'
+        // 2. Buat User di Database
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'role' => $request->role,
-            'annual_leave_quota' => $request->annual_leave_quota,
-            // Kita beri password acak karena login utama via Google
-            'password' => bcrypt(Str::random(16)),
-            'google_id' => null, // Akan terisi otomatis saat user login pertama kali
+            'role' => $request->role ?? 'employee',
+            'annual_leave_quota' => $request->annual_leave_quota ?? 12,
+            // Simpan password yang sudah di-HASH
+            'password' => Hash::make($plainPassword),
+            'google_id' => null,
         ]);
 
+        // 3. Kirim Email ke Karyawan (Gunakan Try-Catch agar tidak error jika mail server down)
+        try {
+            Mail::to($user->email)->send(new EmployeeWelcomeMail($user, $plainPassword));
+            $mailStatus = 'Email kredensial berhasil dikirim.';
+        } catch (\Exception $e) {
+            // [DEBUGGING] Tampilkan error asli ke frontend agar kita tahu penyebabnya
+            // Kembalikan error 500 agar masuk ke catch di frontend
+            return response()->json([
+                'message' => 'Gagal kirim email: ' . $e->getMessage()
+            ], 500);
+        }
+
         return response()->json([
-            'message' => 'Karyawan berhasil diundang. Instruksikan karyawan untuk login menggunakan email tersebut via Google.',
-            'data' => new UserResource($user)
+            'message' => $mailStatus,
+            'data' => new UserResource($user),
+            // Opsional: Tetap kembalikan password di response untuk debug/admin
+            'debug_password' => $plainPassword
         ], 201);
     }
 
@@ -65,7 +85,17 @@ class UserController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
+        // Ini sekarang akan melakukan Soft Delete secara otomatis
         $user->delete();
-        return response()->json(['message' => 'Data karyawan berhasil dihapus']);
+
+        return response()->json(['message' => 'Data karyawan berhasil dinonaktifkan']);
+    }
+    public function restore($id)
+    {
+        // Cari user termasuk yang sudah di-soft delete
+        $user = User::withTrashed()->findOrFail($id);
+        $user->restore();
+
+        return response()->json(['message' => 'Akun karyawan berhasil diaktifkan kembali.']);
     }
 }

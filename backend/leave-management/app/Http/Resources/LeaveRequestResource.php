@@ -30,7 +30,7 @@ class LeaveRequestResource extends JsonResource
             'status' => $this->status,
             'status_label' => ucfirst($this->status),
             // Generate full URL untuk attachment
-            'attachment_url' => $this->attachment ? Storage::url($this->attachment) : null,
+            'attachment_path' => $this->attachment ? Storage::url($this->attachment) : null,
             'created_at' => $this->created_at->diffForHumans(),
         ];
     }

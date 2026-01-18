@@ -47,9 +47,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users', [UserController::class, 'index']);
         Route::post('/users', [UserController::class, 'store']); // Invite User
         Route::delete('/users/{user}', [UserController::class, 'destroy']);
+        Route::patch('users/{id}/restore', [UserController::class, 'restore']);
 
         // 2. Approval Cuti (Hanya Admin yang boleh Approve/Reject)
         Route::patch('/leaves/{id}/status', [LeaveRequestController::class, 'updateStatus']);
+
+
     });
 
 });
