@@ -20,7 +20,7 @@ function CallbackContent() {
       // Disini kita langsung redirect saja agar cepat
       
       // 3. Redirect ke Dashboard
-      router.push('/');
+      router.push('/dashboard');
     } else {
       // Jika tidak ada token, kembalikan ke login
       router.push('/login?error=oauth_failed');

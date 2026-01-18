@@ -1,18 +1,33 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { authService } from '@/services/authService';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
 export default function LoginPage() {
   const router = useRouter();
+  
+  const searchParams = useSearchParams();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  // State Form Manual
   const [formData, setFormData] = useState({ email: '', password: '' });
+
+  // [CHANGE 3] Add this useEffect to check for errors from the Backend Redirect
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+
+    if (errorParam === 'unauthorized_email') {
+      // We set the state here so it uses your existing UI error box below
+      setError('Email Anda belum terdaftar. Silakan hubungi Admin/HRD.');
+    } else if (errorParam) {
+      // Catch other generic errors
+      setError('Terjadi kesalahan saat login.');
+    }
+  }, [searchParams]);
 
   // Handle Login Manual
   const handleLogin = async (e: React.FormEvent) => {
@@ -28,9 +43,10 @@ export default function LoginPage() {
       localStorage.setItem('user', JSON.stringify(data.user));
       
       // Redirect ke Dashboard
-      router.push('/');
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Login gagal.');
+      
     } finally {
       setLoading(false);
     }
@@ -44,8 +60,9 @@ export default function LoginPage() {
           <p className="text-sm text-gray-500">Silakan login untuk melanjutkan</p>
         </div>
 
+        {/* This existing block will now display the Google Error too */}
         {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 text-sm rounded border border-red-200">
+          <div className="mb-4 p-3 bg-red-100 text-red-700 text-sm rounded border border-red-200 text-center">
             {error}
           </div>
         )}
@@ -87,7 +104,6 @@ export default function LoginPage() {
         </div>
 
         {/* Tombol OAuth Google */}
-        {/* Link ini mengarah langsung ke Backend Laravel */}
         <a href={authService.getGoogleAuthUrl()} className="block w-full">
           <Button type="button" variant="outline" className="w-full">
             <img 

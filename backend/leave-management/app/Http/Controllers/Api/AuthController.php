@@ -8,32 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Facades\Socialite;
 
-class AuthController extends Controller{
+class AuthController extends Controller
+{
 
-    /**
-     * REGISTER MANUAL
-     */
-    public function register(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|unique:users',
-            'password' => 'required|string|min:8'
-        ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'employee', // Default role
-            'annual_leave_quota' => 12
-        ]);
-
-        return response()->json([
-            'message' => 'User registered successfully',
-            'user' => $user
-        ], 201);
-    }
     /**
      * 1. LOGIN KONVENSIONAL (Email & Password)
      */
@@ -93,47 +71,32 @@ class AuthController extends Controller{
     public function handleProviderCallback()
     {
         try {
-            // Ambil user dari Google
             $socialUser = Socialite::driver('google')->stateless()->user();
-
-            // Logic: Cari user berdasarkan email atau google_id
-            $user = User::where('email', $socialUser->getEmail())
-                        ->orWhere('google_id', $socialUser->getId())
-                        ->first();
-
-            // Jika user tidak ada, buat baru (Auto Register)
-            if (!$user) {
-                $user = User::create([
-                    'name'              => $socialUser->getName(),
-                    'email'             => $socialUser->getEmail(),
-                    'google_id'         => $socialUser->getId(),
-                    'role'              => 'employee',
-                    'annual_leave_quota'=> 12,
-                    'password'          => null, // Password null karena login via Google
-                ]);
-            } else {
-                // Jika user ada tapi belum punya google_id, update datanya
-                if (!$user->google_id) {
-                    $user->update(['google_id' => $socialUser->getId()]);
-                }
-            }
-
-            // Buat Token
-            $token = $user->createToken('auth_token')->plainTextToken;
-
-            // PENTING: Karena ini API dan Frontend terpisah (Next.js),
-            // Kita tidak return JSON, tapi REDIRECT ke URL Frontend dengan membawa token.
-
             $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
 
-            return redirect("{$frontendUrl}/auth/callback?token={$token}");
+            // 1. CARI USER: Hanya cari berdasarkan email
+            $user = User::where('email', $socialUser->getEmail())->first();
 
+            // 2. LOGIKA "DENY BY DEFAULT"
+            if (!$user) {
+                // Jika email tidak ditemukan di DB (belum diinput Admin)
+                // Redirect ke login dengan pesan error
+                return redirect("{$frontendUrl}/login?error=unauthorized_email");
+            }
+
+            // 3. SINKRONISASI: Jika user ada, tautkan google_id-nya
+            if (!$user->google_id) {
+                $user->update([
+                    'google_id' => $socialUser->getId(),
+                ]);
+            }
+
+            // 4. Buat Token Sanctum
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return redirect("{$frontendUrl}/auth/callback?token={$token}");
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Authentication failed',
-                'message' => $e->getMessage()
-            ], 500);
+            return redirect("{$frontendUrl}/login?error=auth_failed");
         }
     }
-
 }
