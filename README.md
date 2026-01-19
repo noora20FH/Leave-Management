@@ -190,7 +190,61 @@ NEXT_PUBLIC_BASE_URL=http://localhost:8000
 3. Jalankan aplikasi: `npm run dev`.
 
 ---
+##📂 Struktur Folder (Directory Tree)
+###1. Backend (Laravel 11)
+Struktur ini menonjolkan penggunaan API Resources dan pemisahan logika kontroler.
 
+Plaintext
+
+backend/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/Api/
+│   │   │   ├── AuthController.php      # Login, Register, Logout, OAuth
+│   │   │   ├── UserController.php      # Manajemen Karyawan, Restore, Soft Delete
+│   │   │   └── LeaveRequestController.php # CRUD Cuti & Approval Logic
+│   │   ├── Middleware/
+│   │   │   └── IsAdmin.php             # Role-based Access Control
+│   │   └── Resources/
+│   │       ├── UserResource.php        # Transformasi data User
+│   │       └── LeaveRequestResource.php # Transformasi data Cuti & Path Lampiran
+│   ├── Mail/
+│   │   └── EmployeeWelcomeMail.php     # Template Email Kredensial (Brevo)
+│   └── Models/
+│       ├── User.php                    # SoftDeletes & Quota Relationship
+│       └── LeaveRequest.php            # File Upload Attachment Relationship
+├── database/
+│   ├── migrations/                     # Skema tabel Users & Leave Requests
+│   └── seeders/
+│       └── EmployeeSeeder.php          # Otomasi 20 data dummy karyawan
+└── routes/
+    └── api.php                         # Definisi Endpoint API & Sanctum Middleware
+### 2. Frontend (Next.js 14/15)
+Struktur ini menonjolkan penggunaan Custom Hooks untuk memisahkan logika dari komponen UI.
+
+Plaintext
+
+frontend/
+├── src/
+│   ├── app/
+│   │   ├── (auth)/auth/callback/       # Handler redirect Google OAuth
+│   │   ├── login/                      # Halaman masuk
+│   │   └── dashboard/                  # Halaman utama (Role-based view)
+│   ├── components/
+│   │   ├── dashboard/
+│   │   │   ├── AdminView.tsx           # UI Manajemen Karyawan & Approval
+│   │   │   └── EmployeeView.tsx        # UI Form Cuti & Riwayat
+│   │   ├── layout/
+│   │   │   └── Navbar.tsx              # Navigasi & Logout logic
+│   │   └── ui/
+│   │       └── Button.tsx              # Shared Component (Loading state)
+│   ├── hooks/                          # LOGIKA UTAMA (JavaScript Logic)
+│   │   ├── useAuth.ts                  # Logic Auth & Callback
+│   │   ├── useAdminManagement.ts       # Logic Admin (Search, CRUD, Pagination)
+│   │   └── useEmployeeLeave.ts         # Logic Employee (Submit, File Upload)
+│   └── lib/
+│       └── api.ts                      # Axios/Fetch Wrapper (Base URL & Interceptor)
+└── .env.local                          # Konfigurasi Backend URL
 
 ---
 
@@ -206,6 +260,7 @@ NEXT_PUBLIC_BASE_URL=http://localhost:8000
 * `backend/app/Services`: Logika bisnis (perhitungan kuota & upload file).
 * `frontend/src/hooks`: Manajer *state* dan *side-effects* (API calls).
 * `frontend/src/components`: UI modular yang dapat digunakan kembali.
+
 
 
 
