@@ -131,8 +131,12 @@ NEXT_PUBLIC_BASE_URL=http://localhost:8000
 
 ### 4. Frontend Optimization
 
-* **Custom Hooks**: Logika API dipisahkan ke `src/hooks/` untuk menjaga komponen UI tetap bersih.
+* **Custom Hooks**: Logika API dipisahkan ke `src/hooks/` untuk menjaga komponen UI tetap bersih
+
+ `useAdminManagement`: Mengelola pencarian karyawan, approval cuti, dan paginasi.
+ `useEmployeeLeave`: Mengelola form pengajuan cuti dan validasi ukuran file di sisi klien.
 * **Paginasi & Search**: Fitur pencarian *client-side* yang efisien dan paginasi data untuk performa optimal saat data karyawan bertambah banyak.
+
 
 ---
 
@@ -187,24 +191,6 @@ NEXT_PUBLIC_BASE_URL=http://localhost:8000
 
 ---
 
-## 📝 Fitur Teknis Mendetail
-
-### 1. Autentikasi Ganda (Socialite & Manual)
-
-* **OAuth 2.0**: Menggunakan **Laravel Socialite** untuk integrasi Login Google. Sistem memvalidasi apakah email sudah terdaftar sebelum mengizinkan akses.
-* **Password Pattern**: Password otomatis untuk karyawan baru menggunakan pola `{prefix_email}1234`.
-
-### 2. Leave Management Logic
-
-* **Durasi & Kuota**: Menggunakan library Carbon (`diffInDays`) untuk menghitung durasi cuti. Kuota tahunan dikurangi secara otomatis hanya saat status berubah menjadi `approved`.
-* **File Attachment**: Implementasi pengiriman data menggunakan `Multipart/FormData` dengan validasi backend: `mimes:pdf,jpg,jpeg,png|max:2048`.
-
-### 3. Frontend Optimization (Custom Hooks)
-
-Logika dipisahkan ke folder `src/hooks/` untuk menjaga komponen tetap modular:
-
-* `useAdminManagement`: Mengelola pencarian karyawan, approval cuti, dan paginasi.
-* `useEmployeeLeave`: Mengelola form pengajuan cuti dan validasi ukuran file di sisi klien.
 
 ---
 
@@ -220,5 +206,6 @@ Logika dipisahkan ke folder `src/hooks/` untuk menjaga komponen tetap modular:
 * `backend/app/Services`: Logika bisnis (perhitungan kuota & upload file).
 * `frontend/src/hooks`: Manajer *state* dan *side-effects* (API calls).
 * `frontend/src/components`: UI modular yang dapat digunakan kembali.
+
 
 
